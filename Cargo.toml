@@ -1,0 +1,11 @@
+[package]
+name = "url-scraper"
+version = "0.1.0"
+authors = ["mmstick <mmstickman@gmail.com>"]
+license = "MIT"
+
+[dependencies]
+reqwest = "0.9.2"
+scraper = "0.7.0"
+failure = "0.1.2"
+failure_derive = "0.1.2"
