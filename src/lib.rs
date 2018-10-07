@@ -11,14 +11,12 @@
 //! }
 //!```
 
-extern crate failure;
 extern crate reqwest;
 extern crate scraper;
 
-#[macro_use] extern crate failure_derive;
-
-use reqwest::Url;
+use reqwest::{Client, Url};
 use scraper::{Html, html::Select, Selector};
+use std::fmt;
 
 /// Stores the HTML document in memory.
 pub struct UrlScraper {
@@ -28,9 +26,16 @@ pub struct UrlScraper {
 }
 
 impl UrlScraper {
+    /// Constructs a new scraper from a given URL.
     pub fn new(url: &str) -> Result<Self, Error> {
+        let client = Client::new();
+        Self::new_with_client(url, &client)
+    }
+
+    /// Use an existing `reqwest::Client` to make a request.
+    pub fn new_with_client(url: &str, client: &Client) -> Result<Self, Error> {
         let url = Url::parse(url)?;
-        let mut resp = reqwest::get(url.clone())?;
+        let mut resp = client.get(url.clone()).send()?;
         let html = resp.text()?;
 
         Ok(Self {
@@ -40,6 +45,16 @@ impl UrlScraper {
         })
     }
 
+    /// In case the HTML has already been fetched in advance, this can be used to parse from it directly.
+    pub fn new_with_html(url: &str, html: &str) -> Result<Self, Error> {
+        Ok(Self {
+            url: Url::parse(url)?,
+            html: Html::parse_document(html),
+            selector: Selector::parse("a").expect("failed to create <a> selector"),
+        })
+    }
+
+    /// Fetch the URLs using an iterator.
     pub fn into_iter<'a>(&'a self) -> UrlIter<'a, 'a> {
         UrlIter {
             url: &self.url,
@@ -72,12 +87,20 @@ impl<'a, 'b> Iterator for UrlIter<'a, 'b> {
     }
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug)]
 pub enum Error {
-    #[fail(display = "failed to parse URL: {}", why)]
     UrlParsing { why: reqwest::UrlError },
-    #[fail(display = "failure in request: {}", why)]
     Request { why: reqwest::Error }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let error = match *self {
+            Error::UrlParsing { ref why } => format!("failed to parse URL: {}", why),
+            Error::Request { ref why } => format!("failure in request: {}", why),
+        };
+        f.write_str(&error)
+    }
 }
 
 impl From<reqwest::UrlError> for Error {

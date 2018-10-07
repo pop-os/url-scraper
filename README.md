@@ -1,3 +1,10 @@
+# url-scraper
+
+Rust crate for scraping URLs from HTML pages.
+
+## Example
+
+```rust
 extern crate url_scraper;
 use url_scraper::UrlScraper;
 
@@ -9,3 +16,4 @@ fn main() {
         println!("{}: {}", text, url);
     }
 }
+```
