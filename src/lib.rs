@@ -75,7 +75,7 @@ impl<'a, 'b> Iterator for UrlIter<'a, 'b> {
     fn next(&mut self) -> Option<Self::Item> {
         for element in &mut self.data {
             if let Some(url) = element.value().attr("href") {
-                if ! url.starts_with("?") {
+                if ! url.starts_with('?') {
                     if let Ok(url) = self.url.join(url) {
                         return Some((element.inner_html(), url));
                     }
